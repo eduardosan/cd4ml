@@ -1,0 +1,4 @@
+[run]
+source = cd4ml
+omit = cd4ml/test*
+branch = true
