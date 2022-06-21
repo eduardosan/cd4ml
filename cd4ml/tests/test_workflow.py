@@ -4,15 +4,17 @@ import graphlib
 from cd4ml.workflow import Workflow
 
 
-class TestSetup(TestCase):
+class TestWorkflow(TestCase):
     def setUp(self) -> None:
         pass
 
-    def test_repository(self):
+    def tearDown(self) -> None:
+        pass
+
+    def test_workflow(self):
         """Should start a Workflow"""
         w = Workflow()
         self.assertIsInstance(w, Workflow)
         self.assertIsInstance(w, graphlib.TopologicalSorter)
 
-    def tearDown(self) -> None:
-        pass
+
