@@ -40,7 +40,7 @@ class Workflow(graphlib.TopologicalSorter):
         """
         return self.tasks[name].run(*args, **kwargs)
 
-    def run(self, params: dict):
+    def run(self, params: dict, executor=None):
         """
         Run workflow tasks.
         :param params: dict Tasks input and output format. Ex.:
@@ -48,6 +48,7 @@ class Workflow(graphlib.TopologicalSorter):
             'add':  (1, 2),
             'add2': (a=1, b=2)
         }
+        :param executor:    Type of job executor. Defaults to local asyncio
         :return: dict Output JSON with run results
         {
             'add': 3,
