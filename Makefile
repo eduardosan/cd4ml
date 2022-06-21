@@ -28,3 +28,7 @@ setup:
 ## Run tests in Docker
 test: setup
 	fab test
+
+## Run tests in venv
+test_venv: setup
+	fab test:env=venv

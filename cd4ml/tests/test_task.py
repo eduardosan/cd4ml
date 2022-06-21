@@ -34,3 +34,19 @@ class TestTask(unittest.TestCase):
         t = Task(name='sum', task=add)
         result = t.run(1, 2)
         self.assertEqual(result, 3)
+
+    def test_task_function_params(self):
+        """Should store function params in task"""
+        def add(a, b):
+            return a + b
+
+        t = Task(name='sum', task=add)
+        self.assertListEqual(t.params, ['a', 'b'])
+
+    def test_task_function_no_params(self):
+        """Should return empty list if there is no params in function."""
+        def hello():
+            print("Oi")
+
+        t = Task(name='hello', task=hello)
+        self.assertListEqual(t.params, [])
