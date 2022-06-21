@@ -11,7 +11,7 @@ with open(os.path.join(here, 'VERSION')) as f:
     VERSION = f.read()
 
 requires = [
-    'requests'
+    'dvc'
 ]
 
 tests_require = [
@@ -20,7 +20,6 @@ tests_require = [
     'pytest-flake8',
     'pytest-cov',
     'mock',
-    'gitchangelog',
 ]
 
 setup(
