@@ -10,9 +10,24 @@ class Workflow(graphlib.TopologicalSorter):
         self.tasks = dict()
         super().__init__(*args, **kwargs)
 
-    def add_task(self, func):
+    @property
+    def tasks_order(self):
+        return [*self.static_order()]
+
+    def add_task(self, func, dependency=None):
+        """
+        Add a new task to the workflow
+        :param func: Function to be executed
+        :param dependency: Task dependency name
+        :return:
+        """
         assert isinstance(func, Task)
         self.tasks[func.name] = func
+        if dependency is not None:
+            assert dependency in self.tasks
+            self.add(func.name, dependency)
+        else:
+            self.add(func.name)
 
     def run_task(self, name, *args, **kwargs):
         """

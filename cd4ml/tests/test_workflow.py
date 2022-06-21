@@ -38,3 +38,43 @@ class TestWorkflow(TestCase):
         w.add_task(t)
         result = w.run_task('add', 1, 2)
         self.assertEqual(result, 3)
+
+    def test_add_dependency(self):
+        """Should add a new node dependency to the Workflow."""
+        def add(a, b):
+            return a + b
+
+        w = Workflow()
+        t = Task(name='add', task=add)
+        t2 = Task(name='add2', task=add)
+        t3 = Task(name='add3', task=add)
+        w.add_task(t)
+        w.add_task(t2, dependency='add')
+        w.add_task(t3, dependency='add2')
+        self.assertListEqual(['add', 'add2', 'add3'], w.tasks_order)
+
+    def test_add_complex_dependencies(self):
+        """Should map multilevel dependencies in a graph"""
+        def add(a, b):
+            return a + b
+
+        w = Workflow()
+        t = Task(name='add', task=add)
+        t2 = Task(name='add2', task=add)
+        t3 = Task(name='add3', task=add)
+        t4 = Task(name='add4', task=add)
+        t5 = Task(name='add5', task=add)
+        t6 = Task(name='add6', task=add)
+        t7 = Task(name='add7', task=add)
+        t8 = Task(name='add8', task=add)
+        t9 = Task(name='add9', task=add)
+        w.add_task(t)
+        w.add_task(t2, dependency='add')
+        w.add_task(t3, dependency='add')
+        w.add_task(t4, dependency='add2')
+        w.add_task(t5, dependency='add2')
+        w.add_task(t6, dependency='add')
+        w.add_task(t7, dependency='add5')
+        w.add_task(t8, dependency='add6')
+        w.add_task(t9)
+        self.assertListEqual(['add', 'add9', 'add2', 'add3', 'add6', 'add4', 'add5', 'add8', 'add7'], w.tasks_order)
