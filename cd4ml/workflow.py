@@ -1,5 +1,7 @@
 import graphlib
 
+from concurrent.futures import Future
+
 from cd4ml.task import Task
 
 
@@ -8,6 +10,10 @@ class Workflow(graphlib.TopologicalSorter):
 
     def __init__(self, *args, **kwargs):
         self.tasks = dict()
+        self.valid_executors = [
+            'local'
+        ]
+        self.running_task = None
         super().__init__(*args, **kwargs)
 
     @property
@@ -40,7 +46,15 @@ class Workflow(graphlib.TopologicalSorter):
         """
         return self.tasks[name].run(*args, **kwargs)
 
-    def run(self, params: dict, executor=None):
+    def get_executor(self, executor):
+        if executor not in self.valid_executors:
+            raise ValueError(f"Invalid executor {executor}. Available executors: {self.valid_executors}")
+
+        if executor == 'local':
+            from cd4ml.executor import LocalExecutor
+            return LocalExecutor()
+
+    def run(self, params: dict, executor='local'):
         """
         Run workflow tasks.
         :param params: dict Tasks input and output format. Ex.:
@@ -55,4 +69,23 @@ class Workflow(graphlib.TopologicalSorter):
             'add2': 3
         }
         """
-        pass
+        self.prepare()
+        exe = self.get_executor(executor=executor)
+        # Run all nodes
+        while self.is_active():
+            # Run any tasks when they are ready
+            for task in self.get_ready():
+                exe.submit(self.tasks[task], *params[task])
+
+            # Run tasks
+            exe.run()
+
+            for elm in exe.output:
+                try:
+                    self.done(elm)
+                except ValueError as e:
+                    # This node was alread marked as done
+                    print(e)
+                    pass
+
+        return exe.output

@@ -300,6 +300,7 @@ def test(env='docker'):
         buildtest()
     else:
         _invirt()
+        local("pip install -e '.[testing]'")
         puts(c.blue("Starting tests..."))
         local("py.test")
 

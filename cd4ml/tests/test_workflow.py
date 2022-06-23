@@ -78,3 +78,34 @@ class TestWorkflow(TestCase):
         w.add_task(t8, dependency='add6')
         w.add_task(t9)
         self.assertListEqual(['add', 'add9', 'add2', 'add3', 'add6', 'add4', 'add5', 'add8', 'add7'], w.tasks_order)
+
+    def test_node_add_done(self):
+        """Should mark a task as done."""
+        def add(a, b):
+            return a + b
+
+        w = Workflow()
+        t = Task(name='add', task=add)
+        w.add_task(t)
+        w.prepare()
+        for task in w.get_ready():
+            if task == 'add':
+                w.done(task)
+        self.assertFalse(w.is_active())
+
+    def test_run(self):
+        """Run simple workflow with two tasks"""
+        def add(a, b):
+            return a + b
+
+        w = Workflow()
+        t = Task(name='add', task=add)
+        t2 = Task(name='add2', task=add)
+        w.add_task(t)
+        w.add_task(t2, dependency='add')
+        output = w.run(params={
+            'add': (1, 2),
+            'add2': (2, 3)
+        }, executor='local')
+
+        self.assertDictEqual({'add': 3, 'add2': 5}, output)
