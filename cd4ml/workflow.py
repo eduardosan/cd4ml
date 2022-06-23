@@ -30,8 +30,13 @@ class Workflow(graphlib.TopologicalSorter):
         assert isinstance(func, Task)
         self.tasks[func.name] = func
         if dependency is not None:
-            assert dependency in self.tasks
-            self.add(func.name, dependency)
+            if isinstance(dependency, list):
+                for elm in dependency:
+                    assert elm in self.tasks
+                    self.add(func.name, elm)
+            else:
+                assert dependency in self.tasks
+                self.add(func.name, dependency)
         else:
             self.add(func.name)
 
@@ -75,7 +80,13 @@ class Workflow(graphlib.TopologicalSorter):
         while self.is_active():
             # Run any tasks when they are ready
             for task in self.get_ready():
-                exe.submit(self.tasks[task], *params[task])
+                # Receive arguments as args, kwargs or any other scenario
+                if isinstance(params[task], tuple):
+                    exe.submit(self.tasks[task], *params[task])
+                elif isinstance(params[task], dict):
+                    exe.submit(self.tasks[task], **params[task])
+                else:
+                    exe.submit(self.tasks[task], params[task])
 
             # Run tasks
             exe.run()

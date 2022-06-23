@@ -32,3 +32,14 @@ test: setup
 ## Run tests in venv
 test_venv: setup
 	fab test:env=venv
+
+## Start a jupyter notebook instance with the project
+jupyter:
+	docker run -it --rm \
+    	-p 8888:8888 \
+    	--user root \
+    	-e NB_USER="${USER}" \
+    	-e CHOWN_HOME=yes \
+    	-w "/home/${NB_USER}" \
+    	-v "${PWD}":/home/${USER}/work \
+    	jupyter/base-notebook
