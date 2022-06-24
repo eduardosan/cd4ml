@@ -88,7 +88,6 @@ class Workflow(graphlib.TopologicalSorter):
             # Run any tasks when they are ready
             for task in self.get_ready():
                 if self.tasks[task].get('dependency') is not None:
-                    print(run_config)
                     run_config[task]['params'] = dict()
 
                     if isinstance(self.tasks[task]['dependency'], list):
