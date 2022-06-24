@@ -50,3 +50,22 @@ class TestTask(unittest.TestCase):
 
         t = Task(name='hello', task=hello)
         self.assertListEqual(t.params, [])
+
+    def test_task_simple_param(self):
+        """Should execute a task with a single text param."""
+        def get_url(url):
+            return url
+
+        t = Task(name='url', task=get_url)
+        result = t.run('http://test.com')
+        self.assertEqual(result, 'http://test.com')
+
+    def test_task_simple_named_param(self):
+        """Should execute a task with a single text param."""
+        def get_url(url):
+            return url
+
+        t = Task(name='url', task=get_url)
+        result = t.run(url='http://test.com')
+        self.assertEqual(result, 'http://test.com')
+

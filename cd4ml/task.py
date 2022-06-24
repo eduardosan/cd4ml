@@ -32,4 +32,5 @@ class Task:
 
     def run(self, *args, **kwargs):
         """Run method task if defined"""
+        print(f"11111111111: {args}")
         return self.task(*args, **kwargs)

@@ -1,5 +1,7 @@
 import graphlib
 
+from concurrent.futures import Future
+
 from cd4ml.task import Task
 
 
@@ -8,6 +10,10 @@ class Workflow(graphlib.TopologicalSorter):
 
     def __init__(self, *args, **kwargs):
         self.tasks = dict()
+        self.valid_executors = [
+            'local'
+        ]
+        self.running_task = None
         super().__init__(*args, **kwargs)
 
     @property
@@ -24,8 +30,13 @@ class Workflow(graphlib.TopologicalSorter):
         assert isinstance(func, Task)
         self.tasks[func.name] = func
         if dependency is not None:
-            assert dependency in self.tasks
-            self.add(func.name, dependency)
+            if isinstance(dependency, list):
+                for elm in dependency:
+                    assert elm in self.tasks
+                    self.add(func.name, elm)
+            else:
+                assert dependency in self.tasks
+                self.add(func.name, dependency)
         else:
             self.add(func.name)
 
@@ -40,7 +51,15 @@ class Workflow(graphlib.TopologicalSorter):
         """
         return self.tasks[name].run(*args, **kwargs)
 
-    def run(self, params: dict, executor=None):
+    def get_executor(self, executor):
+        if executor not in self.valid_executors:
+            raise ValueError(f"Invalid executor {executor}. Available executors: {self.valid_executors}")
+
+        if executor == 'local':
+            from cd4ml.executor import LocalExecutor
+            return LocalExecutor()
+
+    def run(self, params: dict, executor='local'):
         """
         Run workflow tasks.
         :param params: dict Tasks input and output format. Ex.:
@@ -55,4 +74,29 @@ class Workflow(graphlib.TopologicalSorter):
             'add2': 3
         }
         """
-        pass
+        self.prepare()
+        exe = self.get_executor(executor=executor)
+        # Run all nodes
+        while self.is_active():
+            # Run any tasks when they are ready
+            for task in self.get_ready():
+                # Receive arguments as args, kwargs or any other scenario
+                if isinstance(params[task], tuple):
+                    exe.submit(self.tasks[task], *params[task])
+                elif isinstance(params[task], dict):
+                    exe.submit(self.tasks[task], **params[task])
+                else:
+                    exe.submit(self.tasks[task], params[task])
+
+            # Run tasks
+            exe.run()
+
+            for elm in exe.output:
+                try:
+                    self.done(elm)
+                except ValueError as e:
+                    # This node was alread marked as done
+                    print(e)
+                    pass
+
+        return exe.output
