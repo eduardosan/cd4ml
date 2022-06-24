@@ -66,3 +66,16 @@ class TestTask(unittest.TestCase):
         result = t.run(url='http://test.com')
         self.assertEqual(result, 'http://test.com')
 
+    def test_task_extend_class(self):
+        """Should instantiate a new class implementing the run method from task."""
+        class Teste(Task):
+            def run(self, *args, **kwargs):
+                return "Hello"
+
+        t = Teste(name='teste')
+        self.assertIsInstance(t, Task)
+        self.assertEqual(t.name, 'teste')
+
+        result = t.run()
+        self.assertEqual(result, 'Hello')
+
