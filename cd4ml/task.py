@@ -26,11 +26,10 @@ class Task:
     def task(self, value):
         """Get parameters from task"""
         if value is not None:
-            for elm in value.__code__.co_varnames:
-                self.params.append(elm)
+            sig = inspect.signature(value)
+            self.params = sig.parameters
             self._task = value
 
     def run(self, *args, **kwargs):
         """Run method task if defined"""
-        print(f"11111111111: {args}")
         return self.task(*args, **kwargs)

@@ -1,7 +1,5 @@
 import graphlib
 
-from concurrent.futures import Future
-
 from cd4ml.task import Task
 
 
@@ -28,7 +26,10 @@ class Workflow(graphlib.TopologicalSorter):
         :return:
         """
         assert isinstance(func, Task)
-        self.tasks[func.name] = func
+        self.tasks[func.name] = {
+            'task': func,
+            'dependency': dependency
+        }
         if dependency is not None:
             if isinstance(dependency, list):
                 for elm in dependency:
@@ -49,7 +50,7 @@ class Workflow(graphlib.TopologicalSorter):
         :param kwargs:
         :return: object Task output
         """
-        return self.tasks[name].run(*args, **kwargs)
+        return self.tasks[name]['task'].run(*args, **kwargs)
 
     def get_executor(self, executor):
         if executor not in self.valid_executors:
@@ -59,13 +60,19 @@ class Workflow(graphlib.TopologicalSorter):
             from cd4ml.executor import LocalExecutor
             return LocalExecutor()
 
-    def run(self, params: dict, executor='local'):
+    def run(self, run_config: dict, executor='local'):
         """
         Run workflow tasks.
-        :param params: dict Tasks input and output format. Ex.:
+        :param run_config: dict Tasks input and output format. Ex.:
         {
-            'add':  (1, 2),
-            'add2': (a=1, b=2)
+            'add': {
+                'params': {'a': 1, 'b': 2},
+                'output': 'add'
+            },
+            'add2': {
+                'params': {'a': 2, 'b': 3},
+                'output': 'add2'
+            }
         }
         :param executor:    Type of job executor. Defaults to local asyncio
         :return: dict Output JSON with run results
@@ -80,18 +87,26 @@ class Workflow(graphlib.TopologicalSorter):
         while self.is_active():
             # Run any tasks when they are ready
             for task in self.get_ready():
-                # Receive arguments as args, kwargs or any other scenario
-                if isinstance(params[task], tuple):
-                    exe.submit(self.tasks[task], *params[task])
-                elif isinstance(params[task], dict):
-                    exe.submit(self.tasks[task], **params[task])
-                else:
-                    exe.submit(self.tasks[task], params[task])
+                if self.tasks[task].get('dependency') is not None:
+                    print(run_config)
+                    run_config[task]['params'] = dict()
+
+                    if isinstance(self.tasks[task]['dependency'], list):
+                        for elm in self.tasks[task]['dependency']:
+                            # Get output name from task workflow configuration
+                            output_var = run_config[elm]['output']
+                            run_config[task]['params'][output_var] = exe.output[output_var]
+                    else:
+                        output_var = run_config[self.tasks[task]['dependency']]['output']
+                        run_config[task]['params'][output_var] = exe.output[output_var]
+
+                exe.submit(self.tasks[task]['task'], params=run_config[task]['params'],
+                           output=run_config[task].get('output'))
 
             # Run tasks
             exe.run()
 
-            for elm in exe.output:
+            for elm in exe.done:
                 try:
                     self.done(elm)
                 except ValueError as e:

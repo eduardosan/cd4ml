@@ -1,6 +1,11 @@
 import unittest
+from collections import OrderedDict
 
 from cd4ml.task import Task
+
+
+def add(a, b):
+    return a + b
 
 
 class TestTask(unittest.TestCase):
@@ -19,29 +24,21 @@ class TestTask(unittest.TestCase):
 
     def test_task_function(self):
         """Should instantiate a general python function as a task."""
-        def add(a, b):
-            return a + b
-
         t = Task(name='sum', task=add)
         self.assertIsInstance(t, Task)
         self.assertTrue(callable(t.task))
 
     def test_task_function_exec(self):
         """Should execute a python function as a task and return results."""
-        def add(a, b):
-            return a + b
-
         t = Task(name='sum', task=add)
         result = t.run(1, 2)
         self.assertEqual(result, 3)
 
     def test_task_function_params(self):
         """Should store function params in task"""
-        def add(a, b):
-            return a + b
-
         t = Task(name='sum', task=add)
-        self.assertListEqual(t.params, ['a', 'b'])
+        self.assertEqual(t.params['a'].name, 'a')
+        self.assertEqual(t.params['b'].name, 'b')
 
     def test_task_function_no_params(self):
         """Should return empty list if there is no params in function."""
@@ -49,7 +46,7 @@ class TestTask(unittest.TestCase):
             print("Oi")
 
         t = Task(name='hello', task=hello)
-        self.assertListEqual(t.params, [])
+        self.assertEqual(t.params, OrderedDict())
 
     def test_task_simple_param(self):
         """Should execute a task with a single text param."""
