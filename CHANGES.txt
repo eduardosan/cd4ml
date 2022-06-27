@@ -1,0 +1,22 @@
+Changelog
+=========
+
+
+(unreleased)
+------------
+- Replace master with main. [Eduardo Santos]
+- New test extending Task class. [Eduardo Santos]
+- Finish preprocessing example. [Eduardo Santos]
+- Fix notebooks folder. [Eduardo Santos]
+- Pass parameters for other steps in worflow. [Eduardo Santos]
+- Receive parameters in multiple formats. [Eduardo Santos]
+- Submit and run tasks sync. [Eduardo Santos]
+- Local basic async executor. [Eduardo Santos]
+- Workflow creation completed. [Eduardo Santos]
+- Add tasks to workflow. [Eduardo Santos]
+- Add tasks execution. [Eduardo Santos]
+- First tests running. [Eduardo Santos]
+- Project skeleton files with build scripts. [Eduardo Santos]
+- Initial commit. [Eduardo F. Santos]
+
+
