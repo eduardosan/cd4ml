@@ -5,6 +5,10 @@ from cd4ml.workflow import Workflow
 from cd4ml.task import Task
 
 
+def add(a, b):
+    return a + b
+
+
 class TestWorkflow(TestCase):
     def setUp(self) -> None:
         pass
@@ -20,19 +24,13 @@ class TestWorkflow(TestCase):
 
     def test_add_task(self):
         """Should add a new task to the Workflow."""
-        def add(a, b):
-            return a + b
-
         w = Workflow()
         t = Task(name='add', task=add)
         w.add_task(t)
-        self.assertIsInstance(w.tasks['add'], Task)
+        self.assertIsInstance(w.tasks['add']['task'], Task)
 
     def test_add_task_run(self):
         """Should add a task run with params for execution."""
-        def add(a, b):
-            return a + b
-
         w = Workflow()
         t = Task(name='add', task=add)
         w.add_task(t)
@@ -41,9 +39,6 @@ class TestWorkflow(TestCase):
 
     def test_add_dependency(self):
         """Should add a new node dependency to the Workflow."""
-        def add(a, b):
-            return a + b
-
         w = Workflow()
         t = Task(name='add', task=add)
         t2 = Task(name='add2', task=add)
@@ -55,9 +50,6 @@ class TestWorkflow(TestCase):
 
     def test_add_complex_dependencies(self):
         """Should map multilevel dependencies in a graph"""
-        def add(a, b):
-            return a + b
-
         w = Workflow()
         t = Task(name='add', task=add)
         t2 = Task(name='add2', task=add)
@@ -81,9 +73,6 @@ class TestWorkflow(TestCase):
 
     def test_add_multiple_dependencies(self):
         """Should allow multiple dependencies for the same node."""
-        def add(a, b):
-            return a + b
-
         w = Workflow()
         t = Task(name='add', task=add)
         t2 = Task(name='add2', task=add)
@@ -97,9 +86,6 @@ class TestWorkflow(TestCase):
 
     def test_node_add_done(self):
         """Should mark a task as done."""
-        def add(a, b):
-            return a + b
-
         w = Workflow()
         t = Task(name='add', task=add)
         w.add_task(t)
@@ -111,17 +97,20 @@ class TestWorkflow(TestCase):
 
     def test_run(self):
         """Run simple workflow with two tasks"""
-        def add(a, b):
-            return a + b
-
         w = Workflow()
         t = Task(name='add', task=add)
         t2 = Task(name='add2', task=add)
         w.add_task(t)
-        w.add_task(t2, dependency='add')
-        output = w.run(params={
-            'add': (1, 2),
-            'add2': {'a': 2, 'b': 3}
+        w.add_task(t2)
+        output = w.run(run_config={
+            'add': {
+                'params': {'a': 1, 'b': 2},
+                'output': 'add'
+            },
+            'add2': {
+                'params': {'a': 2, 'b': 3},
+                'output': 'add2'
+            }
         }, executor='local')
 
         self.assertDictEqual({'add': 3, 'add2': 5}, output)
@@ -135,15 +124,102 @@ class TestWorkflow(TestCase):
         download_g1_brasil = Task(name='download_g1_brasil', task=fetch_feed_data)
         download_folha = Task(name='download_folha', task=fetch_feed_data)
 
-        feeds_json = {
-            "download_folha": "https://feeds.folha.uol.com.br/emcimadahora/rss091.xml",
-            "download_g1": "https://g1.globo.com/rss/g1/",
-            "download_g1_brasil": "https://g1.globo.com/rss/g1/brasil",
+        run_config = {
+            "download_folha": {
+                'params': {'url': "https://feeds.folha.uol.com.br/emcimadahora/rss091.xml"},
+                'output': 'download_folha'
+            },
+            "download_g1": {
+                'params': {'url': "https://g1.globo.com/rss/g1/"},
+                'output': 'download_g1'
+            },
+            "download_g1_brasil": {
+                'params': {'url': "https://g1.globo.com/rss/g1/brasil"},
+                'output': 'download_g1_brasil'
+            },
         }
 
         w = Workflow()
         w.add_task(download_g1)
         w.add_task(download_g1_brasil)
         w.add_task(download_folha)
-        output = w.run(params=feeds_json, executor='local')
+        output = w.run(run_config=run_config, executor='local')
         self.assertDictEqual(output, {'download_folha': None, 'download_g1': None, 'download_g1_brasil': None})
+
+    def test_run_dependency_with_output(self):
+        """Should read dependency params from previous task in the workflow."""
+        def increment(c):
+            return c + 1
+
+        t = Task(name='add', task=add)
+        t2 = Task(name='increment', task=increment)
+        w = Workflow()
+        w.add_task(t)
+        w.add_task(t2, dependency='add')
+        output = w.run(run_config={
+            'add': {
+                'params': {'a': 1, 'b': 2},
+                'output': 'c'
+            },
+            'increment': {
+                'params': None,
+                'output': 'increment'
+            }
+        }, executor='local')
+        self.assertEqual(output['increment'], 4)
+
+    def test_run_dependency_with_output_raises(self):
+        """Should raise an error if dependency doesn't return an output."""
+        def increment(c):
+            return c + 1
+
+        t = Task(name='add', task=add)
+        t2 = Task(name='increment', task=increment)
+        w = Workflow()
+        w.add_task(t)
+        w.add_task(t2, dependency='add')
+        with self.assertRaises(KeyError):
+            w.run(run_config={
+                'add': {'params': {'a': 1, 'b': 2}},
+                'increment': {'params': None}
+            }, executor='local')
+
+    def test_run_multiple_dependencies_with_output(self):
+        """Should read multiple dependency params from previous tasks in the workflow."""
+        def increment(c, d):
+            return (c + d) + 1
+        t = Task(name='add', task=add)
+        t2 = Task(name='increment', task=increment)
+        t3 = Task(name='add2', task=add)
+        w = Workflow()
+        w.add_task(t)
+        w.add_task(t3)
+        w.add_task(t2, dependency=['add', 'add2'])
+        output = w.run(run_config={
+            'add': {
+                'params': {'a': 1, 'b': 2},
+                'output': 'c'
+            },
+            'add2': {
+                'params': {'a': 3, 'b': 4},
+                'output': 'd'
+            },
+            'increment': {
+                'params': None,
+                'output': 'increment'
+            }
+        }, executor='local')
+        self.assertEqual(output['increment'], 11)
+
+    """def test_task_dependencies_ouput(self):
+        """"Should add previous tasks outputs as a parameter for the next task.""""
+        w = Workflow()
+        t = Task(name='add', task=add)
+        t2 = Task(name='add2', task=add)
+        t3 = Task(name='add3', task=add)
+        t4 = Task(name='add4', task=add)
+        w.add_task(t)
+        w.add_task(t2)
+        w.add_task(t4)
+        w.add_task(t3, dependency=['add', 'add2', 'add4'])
+        w.run()"""

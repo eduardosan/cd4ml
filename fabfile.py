@@ -240,18 +240,18 @@ def _sync_and_preflight_check(branch, release_type):
     if local("git diff --staged", capture=True).strip():
         abort(c.red("It seems you have changes in the staging area."))
 
-    # Local master and origin/master must be up-to-date with each other.
-    if (local("git diff origin/master...master", capture=True).strip()
-            or local("git diff master...origin/master", capture=True).strip()):
-        puts(c.red("master is out of sync with origin! Pushing..."))
-        local("git push origin master")
+    # Local main and origin/main must be up-to-date with each other.
+    if (local("git diff origin/main...main", capture=True).strip()
+            or local("git diff main...origin/main", capture=True).strip()):
+        puts(c.red("main is out of sync with origin! Pushing..."))
+        local("git push origin main")
 
     # See what changes are in the branch and make sure there is something to
     # release.
     changes = local("git diff origin/%s...%s" % (branch, branch), capture=True)
 
     if not changes:
-        if not confirm("No changes detected. Releasing from master?"):
+        if not confirm("No changes detected. Releasing from main?"):
             abort(c.red("No changes there to release. Hmm."))
             sys.exit(1)
     else:
@@ -266,16 +266,16 @@ def _sync_and_preflight_check(branch, release_type):
         puts(c.red("%s is out of sync with origin!." % branch))
         local("git push origin %s" % branch)
 
-    # Merge master
-    if branch != 'master':
-        local("git checkout master")
+    # Merge main
+    if branch != 'main':
+        local("git checkout main")
         local("git merge %s" % branch)
         local("git checkout %s" % branch)
 
-    # Make sure our branch has all the latest from master.
-    changes_from_master = local("git diff %s...master" % branch, capture=True)
-    if changes_from_master:
-        abort(c.red("%s is out of sync with master and needs to be merged." % branch))
+    # Make sure our branch has all the latest from main.
+    changes_from_main = local("git diff %s...main" % branch, capture=True)
+    if changes_from_main:
+        abort(c.red("%s is out of sync with main and needs to be merged." % branch))
 
     # Compute the new server compliant version number.
     version = compute_version(release_type)
@@ -340,15 +340,15 @@ def release(branch=None, release_type='patch', verify=False):
         local('git commit -m "Bumped version to v%s" -a' % version)
     local('git tag -a "v%s" -m "Release version %s"' % (version, version))
 
-    # Merge the branch into master and push them both to origin
+    # Merge the branch into main and push them both to origin
     # Conflicts should never occur, due to preflight checks.
-    local('git checkout master', capture=True)
+    local('git checkout main', capture=True)
     local('git merge %s' % branch, capture=True)
-    # if branch != 'master':
+    # if branch != 'main':
     # local('git branch -d %s' % branch)
     # This deletes remote branch.
     # local('git push origin :%s' % branch)
-    local('git push --tags origin master')
+    local('git push --tags origin main')
     puts(c.magenta("Released branch %s as v%s!" % (branch, version)))
 
     if verify:
@@ -360,7 +360,7 @@ def release(branch=None, release_type='patch', verify=False):
 
     # Get back to branch
     local('git checkout %s' % branch, capture=True)
-    local('git merge master')
+    local('git merge main')
 
     return version
 
