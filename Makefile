@@ -42,3 +42,6 @@ jupyter:
 	echo "Building version $(VERSION)"
 	docker build --target jupyter . -t $(IMAGE)
 	docker run -it --rm -p $(PORT):8888 -e PORT=$(PORT) -v $(PWD):/usr/src/app $(IMAGE)
+
+release:
+	fab release
