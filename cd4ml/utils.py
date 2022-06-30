@@ -53,12 +53,16 @@ def parse_node(ts: TopologicalSorter, parent, node, agraph):
     return agraph
 
 
-def draw_graph(graph: TopologicalSorter):
+def draw_graph(graph: TopologicalSorter, filepath=None):
     """
-    Draw SVC representation for the graph
-    :param graph: pgv.Agraph   Agraph object
+    Draw SVG representation for the graph
+    :param graph: pgv.Agraph   A graph object
+    :param filepath: str    filepath to image file output
     :return: object with draw
     """
     g = get_graph(graph)
-    g.layout()
+    g.layout(prog='dot')
+
+    if filepath is not None:
+        g.draw(filepath)
     return g

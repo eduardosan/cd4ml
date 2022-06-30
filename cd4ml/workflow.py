@@ -1,7 +1,10 @@
+import copy
 import graphlib
 
 from cd4ml.task import Task
 from cd4ml.utils import graph_to_dot, draw_graph
+
+tmpgraph = None
 
 
 class Workflow(graphlib.TopologicalSorter):
@@ -126,6 +129,19 @@ class Workflow(graphlib.TopologicalSorter):
 
         return filepath
 
-    def draw(self):
+    def draw(self, filepath=None):
         """Draw graph to the output."""
-        return draw_graph(self)
+        return draw_graph(self, filepath=None)
+
+    def prepare(self) -> None:
+        """Just copy object before it starts processing the graph, so we can run it multiple times"""
+        global tmpgraph
+        tmpgraph = graphlib.TopologicalSorter()
+        tmpgraph._node2info = copy.deepcopy(self._node2info)
+        tmpgraph._ready_nodes = copy.deepcopy(self._ready_nodes)
+        super().prepare()
+
+    def reset(self):
+        """Restore previous objects so we can run the workflow again"""
+        self._ready_nodes = tmpgraph._ready_nodes
+        self._node2info = tmpgraph._node2info
