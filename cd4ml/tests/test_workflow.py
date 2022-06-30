@@ -1,5 +1,7 @@
-from unittest import TestCase
+import io
 import graphlib
+import pytest
+from unittest import TestCase
 
 from cd4ml.workflow import Workflow
 from cd4ml.task import Task
@@ -211,15 +213,30 @@ class TestWorkflow(TestCase):
         }, executor='local')
         self.assertEqual(output['increment'], 11)
 
-    """def test_task_dependencies_ouput(self):
-        """"Should add previous tasks outputs as a parameter for the next task.""""
+    @pytest.mark.usefixtures('get_dotfile', 'get_dotfile_path')
+    def test_graph_dot_generate(self):
+        """Should generate a dot file for the provided graph."""
         w = Workflow()
         t = Task(name='add', task=add)
         t2 = Task(name='add2', task=add)
         t3 = Task(name='add3', task=add)
         t4 = Task(name='add4', task=add)
+        t5 = Task(name='add5', task=add)
+        t6 = Task(name='add6', task=add)
+        t7 = Task(name='add7', task=add)
+        t8 = Task(name='add8', task=add)
+        t9 = Task(name='add9', task=add)
         w.add_task(t)
-        w.add_task(t2)
-        w.add_task(t4)
-        w.add_task(t3, dependency=['add', 'add2', 'add4'])
-        w.run()"""
+        w.add_task(t2, dependency='add')
+        w.add_task(t3, dependency='add')
+        w.add_task(t4, dependency='add2')
+        w.add_task(t5, dependency='add2')
+        w.add_task(t6, dependency='add')
+        w.add_task(t7, dependency='add5')
+        w.add_task(t8, dependency='add6')
+        w.add_task(t9)
+
+        dotfile = w.dotfile(self.dotfile_path)
+        dot = io.open(dotfile).read()
+        dotfile = io.open(self.dotfile).read()
+        self.assertListEqual(dot.split(), dotfile.split())

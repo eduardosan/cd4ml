@@ -1,0 +1,12 @@
+strict digraph "" {
+    start   [shape=doublecircle];
+    start -> add;
+    start -> add9;
+    add -> add2;
+    add -> add3;
+    add -> add6;
+    add2 -> add4;
+    add2 -> add5;
+    add5 -> add7;
+    add6 -> add8;
+}

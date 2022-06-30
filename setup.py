@@ -20,6 +20,10 @@ tests_require = [
     'mock',
 ]
 
+graphs_require = [
+    'pygraphviz'
+]
+
 setup(
     name='cd4ml',
     version=VERSION,
@@ -40,7 +44,8 @@ setup(
     author='Eduardo Santos',
     author_email='eduardo@eduardosan.com',
     extras_require={
-        'testing': tests_require
+        'testing': tests_require,
+        'graphs': graphs_require
     },
     install_requires=requires,
 )

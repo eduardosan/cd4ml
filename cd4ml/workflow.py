@@ -1,6 +1,7 @@
 import graphlib
 
 from cd4ml.task import Task
+from cd4ml.utils import graph_to_dot, draw_graph
 
 
 class Workflow(graphlib.TopologicalSorter):
@@ -114,3 +115,17 @@ class Workflow(graphlib.TopologicalSorter):
                     pass
 
         return exe.output
+
+    def dotfile(self, filepath):
+        """Generate a dotfile from graph."""
+        dotstring = graph_to_dot(self)
+
+        # Generate dotfile in tmp dir
+        with open(filepath, 'w+') as fd:
+            fd.write(dotstring)
+
+        return filepath
+
+    def draw(self):
+        """Draw graph to the output."""
+        return draw_graph(self)
