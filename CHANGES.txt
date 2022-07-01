@@ -4,6 +4,19 @@ Changelog
 
 (unreleased)
 ------------
+- Fix image rendering on notebook. [Eduardo Santos]
+
+
+v0.0.2 (2022-06-30)
+-------------------
+- Bumped version to v0.0.2. [Eduardo Santos]
+- Release command on Makefile. [Eduardo Santos]
+- Workflow draw feature. [Eduardo Santos]
+
+
+v0.0.1 (2022-06-27)
+-------------------
+- Bumped version to v0.0.1. [Eduardo Santos]
 - Replace master with main. [Eduardo Santos]
 - New test extending Task class. [Eduardo Santos]
 - Finish preprocessing example. [Eduardo Santos]

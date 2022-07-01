@@ -4,10 +4,11 @@ from cd4ml.task import Task
 class LocalExecutor:
     """Local executor class."""
 
-    def __init__(self):
+    def __init__(self, experiment_id='latest'):
         self.tasks = dict()
         self.output = dict()
         self.done = list()
+        self.experiment_id = experiment_id
 
     def submit(self, task: Task, params: dict = None, output=None):
         """

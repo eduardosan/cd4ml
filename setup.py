@@ -10,7 +10,9 @@ with open(os.path.join(here, 'CHANGES.txt')) as f:
 with open(os.path.join(here, 'VERSION')) as f:
     VERSION = f.read()
 
-requires = []
+requires = [
+    'pandas'
+]
 
 tests_require = [
     'WebTest >= 1.3.1',  # py3 compat
@@ -18,6 +20,10 @@ tests_require = [
     'pytest-flake8',
     'pytest-cov',
     'mock',
+]
+
+graphs_require = [
+    'pygraphviz'
 ]
 
 setup(
@@ -40,7 +46,8 @@ setup(
     author='Eduardo Santos',
     author_email='eduardo@eduardosan.com',
     extras_require={
-        'testing': tests_require
+        'testing': tests_require,
+        'graphs': graphs_require
     },
     install_requires=requires,
 )

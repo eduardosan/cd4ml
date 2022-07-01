@@ -5,6 +5,10 @@ COLOR_GREEN = \033[32m
 COLOR_YELLOW = \033[33m
 PROJECT_NAME = `basename $(PWD)`
 
+VERSION = `cat VERSION`
+PORT = 8888
+IMAGE = "tw/$(PROJECT_NAME):$(VERSION)"
+
 .DEFAULT_GOAL = help
 
 ## Prints this help
@@ -35,11 +39,9 @@ test_venv: setup
 
 ## Start a jupyter notebook instance with the project
 jupyter:
-	docker run -it --rm \
-    	-p 8888:8888 \
-    	--user root \
-    	-e NB_USER="${USER}" \
-    	-e CHOWN_HOME=yes \
-    	-w "/home/${NB_USER}" \
-    	-v "${PWD}":/home/${USER}/work \
-    	jupyter/base-notebook
+	echo "Building version $(VERSION)"
+	docker build --target jupyter . -t $(IMAGE)
+	docker run -it --rm -p $(PORT):8888 -e PORT=$(PORT) -v $(PWD):/usr/src/app $(IMAGE)
+
+release:
+	fab release

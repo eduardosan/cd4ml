@@ -13,7 +13,7 @@ RUN echo "$TIMEZONE" > /etc/timezone; dpkg-reconfigure -f noninteractive tzdata
 
 # Configure locale
 RUN echo "Set default locale to $LOCALE"
-RUN apt-get update && apt-get install -y locales && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y locales graphviz graphviz-dev && rm -rf /var/lib/apt/lists/*
 RUN echo "$LOCALE UTF-8" >> /etc/locale.gen
 RUN locale-gen
 RUN export LANGUAGE="$LOCALE"; export LANG="$LOCALE"; export LC_ALL="$LOCALE"; locale-gen "$LOCALE"; DEBIAN_FRONTEND=noninteractive dpkg-reconfigure locales
@@ -22,6 +22,9 @@ COPY requirements.txt ./
 RUN pip install -r requirements.txt
 
 COPY . .
+
+# Install graphs support
+RUN pip install --no-cache-dir -e ".[graphs]"
 
 CMD [ "python", "./setup.py" , "develop" ]
 
@@ -33,4 +36,11 @@ RUN rm -rf *.egg-info .cache .eggs build dist dists
 
 # Run testing dependencies for the container
 RUN pip install --no-cache-dir -e ".[testing]"
+
+FROM base as jupyter
+
+ENV PORT=8888
+
+RUN pip install jupyterlab
+ENTRYPOINT jupyter lab --app_dir=/usr/src/app --no-browser --port=${PORT} --allow-root --ip=0.0.0.0
 

@@ -67,3 +67,15 @@ class TestExecutor(unittest.TestCase):
         print(self.e.output)
         for elm in self.e.output:
             self.assertEqual(self.e.output[elm], 3)
+
+    def test_executor_experiments_repository(self):
+        """Should create a repository for experiments data."""
+        pass
+
+    def test_executor_experiments_output(self):
+        """Should store experiments output on data repository"""
+        pass
+
+    def test_executor_experiments_params(self):
+        """Should read experiments params from data repository"""
+        pass
