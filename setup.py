@@ -10,7 +10,9 @@ with open(os.path.join(here, 'CHANGES.txt')) as f:
 with open(os.path.join(here, 'VERSION')) as f:
     VERSION = f.read()
 
-requires = []
+requires = [
+    'pandas'
+]
 
 tests_require = [
     'WebTest >= 1.3.1',  # py3 compat
