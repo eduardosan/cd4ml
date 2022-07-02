@@ -2,17 +2,17 @@ from abc import ABC, abstractmethod
 import pandas as pd
 
 
-# TODO: Fazer retorno direto, sem propriedades.?????
-
 class FeatureGenerator(ABC):
-
+    '''
+    Abstract class representing feature generation process that goes into production.
+    '''
     @abstractmethod
-    def generate_features(self, data:pd.DataFrame)-> pd.DataFrame:
+    def get_features(self, data:pd.DataFrame)-> pd.DataFrame:
         '''Method to generate feature data. Data should be stored in this class using the data property.'''
         pass
 
     @abstractmethod
-    def generate_target(self, data:pd.DataFrame):
+    def get_target(self, data:pd.DataFrame):
         pass
 
     @property

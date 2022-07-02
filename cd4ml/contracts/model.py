@@ -1,55 +1,72 @@
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
-from typing import Any, Callable,Union
-import pandas as pd
-
-@dataclass
-class Artifact:
-    name:str
-    output_path:str
-    object:Any
+from typing import Callable,Union
+from artifact import Artifact
 
 class Model(ABC):
+    
+    def __init__(self, artifacts:Union[Artifact,list[Artifact]]) -> None:
+        '''
+        Base class representing the model contract that should be used to put a machine learning model into production
+        Any complex object that is used during training or prediction should be stored in the artifacts property.
+        .
+        '''
+        self.artifacts = artifacts
+        self._check_artifacts()
 
     @abstractmethod
     def fit(self,X,y):
-        '''Method to train the machine learning model.'''
+        '''
+        Method to train the machine learning model. 
+        Any complex object that is used during training should be stored as an Artifact class.
+        ''' 
         pass
     
     @abstractmethod
     def predict(self,X):
-        '''Method to make predictions with the machine learning model.'''
-        pass
+        '''
+        Method to make predictions with the machine learning model.
+        Any complex object that is used during prediction should be retrieved from the artifacts property.
+        '''
+        pass    
     
-    @abstractmethod
-    def load(self,path):
-        '''Method to load the machine learning model into memory.'''
-        pass
-    
-    @property
-    def parameters(self):
-        return self._parameters
+    def _check_artifacts(self):
+        if self.artifacts is None or self.artifacts == []:
+            raise ValueError("A proper artifacts should be set in order to use the model.")
 
-    @parameters.setter
-    def parameters(self,params:list[Artifact]):
-        self._parameters = params
-    
     @property
-    def model(self):
-        return self._model
+    def artifacts(self)-> list[Artifact]:
+        '''
+        This property contains all object artifacts (Transformers,Estimators, etc) used during fit and that will be used during predict.
+        This is to ensure the proper logging into the experiment tracking tool.
+        '''
+        return self._artifacts
 
-    @model.setter
-    def model(self,model):
-        self._model = model
+    @artifacts.setter
+    def artifacts(self,artifacts:Union[Artifact,list[Artifact]]):
+        if isinstance(artifacts,list) and isinstance(artifacts[0],Artifact):
+            self._artifacts = artifacts
+        elif isinstance(artifacts,Artifact):
+            self._artifacts = [artifacts]
+        else:
+            raise TypeError("artifacts object should be a list of Artifact classes or a single Artifact.")
+
+    @artifacts.getter
+    def artifacts_objects(self):
+        return [x.object for x in self._artifacts]
+
+    @artifacts.getter
+    def artifacts_params(self):
+        return [x.params for x in self._artifacts]
+
 
 class ModelEvaluator:
 
-    def __init__(self,model):
+    def __init__(self,model:Model):
         self.model = model
 
     def evaluate(self,X,y,metrics:Union[Callable,list[Callable]]):
 
-        y_pred = self.model.predict(X) #Improvement: some metrics might not work with prediction, but with prediction_proba.
+        y_pred = self.model.predict(X) #Feature Improvement: some metrics might not work with prediction, but with prediction_proba.
 
         metric_values = {}
 
