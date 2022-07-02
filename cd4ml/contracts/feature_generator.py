@@ -2,6 +2,8 @@ from abc import ABC, abstractmethod
 import pandas as pd
 
 
+# TODO: Fazer retorno direto, sem propriedades.?????
+
 class FeatureGenerator(ABC):
 
     @abstractmethod

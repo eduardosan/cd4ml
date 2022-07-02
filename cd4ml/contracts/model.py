@@ -1,6 +1,13 @@
 from abc import ABC, abstractmethod
-from typing import Callable,Union
+from dataclasses import dataclass
+from typing import Any, Callable,Union
 import pandas as pd
+
+@dataclass
+class Artifact:
+    name:str
+    output_path:str
+    object:Any
 
 class Model(ABC):
 
@@ -8,10 +15,15 @@ class Model(ABC):
     def fit(self,X,y):
         '''Method to train the machine learning model.'''
         pass
-
+    
     @abstractmethod
     def predict(self,X):
         '''Method to make predictions with the machine learning model.'''
+        pass
+    
+    @abstractmethod
+    def load(self,path):
+        '''Method to load the machine learning model into memory.'''
         pass
     
     @property
@@ -19,7 +31,7 @@ class Model(ABC):
         return self._parameters
 
     @parameters.setter
-    def parameters(self,params):
+    def parameters(self,params:list[Artifact]):
         self._parameters = params
     
     @property
