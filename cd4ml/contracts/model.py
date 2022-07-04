@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Callable,Union
-from artifact import Artifact
+from cd4ml.contracts.artifact import Artifact
 
 class Model(ABC):
     
