@@ -95,37 +95,49 @@ class LocalExperimentProvider(ExperimentProvider):
         return filepath
 
     def load(self, path, pandas=False):
-        if pandas:
-            return self._load_pandas(path)
         filepath = os.path.join(self.repository_path, path)
+        if pandas:
+            return self._load_pandas(filepath)
         with open(filepath, 'r') as fd:
             return json.load(fd)
 
-    def _save_pandas(self, path, data: pd.DataFrame, *args, **kwargs):
+    def _save_pandas(self, path, data: pd.DataFrame, orient='records', lines=True, *args, **kwargs):
         """
         Save pandas to data repository
         :param path: Path where data is stored with filename, relative to experiment repository
         :type path: str
         :param data: Instance of a pandas DataFrame
         :type data: pd.DataFrame
+        :param orient: pandas to_json orient definition like `official documentation
+            <https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.to_json.html>`, defaults to 'records'
+        :type orient: str
+        :param lines: pandas to_json lines attribute definition like `official documentation
+            <https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.to_json.html>`, defaults to True
+        :type lines: bool
         :param args:
         :param kwargs:
         :return:
         """
-        data.to_json(path, *args, **kwargs)
+        data.to_json(path, orient=orient, lines=lines, *args, **kwargs)
         return path
 
-    def _load_pandas(self, path, *args, **kwargs):
+    def _load_pandas(self, path, orient='records', lines=True, *args, **kwargs):
         """
         Load a pandas dataframe
         :param path: Path where data is stored with filename, relative to experiment repository
         :type path: str
+        :param orient: pandas read_json orient definition like `official documentation
+            <https://pandas.pydata.org/docs/reference/api/pandas.read_json.html>`, defaults to 'records'
+        :type orient: str
+        :param lines: pandas read_json lines attribute definition like `official documentation
+            <https://pandas.pydata.org/docs/reference/api/pandas.read_json.html>`, defaults to True
+        :type lines: bool
         :param args:
         :param kwargs:
         :return: Return a DataFrame
         :rtype: pd.DataFrame
         """
-        return pd.read_json(path, *args, **kwargs)
+        return pd.read_json(path, orient=orient, lines=lines, *args, **kwargs)
 
     def add_path(self, path, name):
         new_path = os.path.join(self.repository_path, path)
