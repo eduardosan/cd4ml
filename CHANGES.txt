@@ -4,6 +4,14 @@ Changelog
 
 (unreleased)
 ------------
+- Adding documentation features and sphinx. [Eduardo Santos]
+- Small fix on tests. [Eduardo Santos]
+- Experiments structure. [Eduardo Santos]
+
+
+v0.0.3 (2022-06-30)
+-------------------
+- Bumped version to v0.0.3. [Eduardo Santos]
 - Fix image rendering on notebook. [Eduardo Santos]
 
 
