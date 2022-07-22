@@ -3,6 +3,8 @@ import graphlib
 
 from cd4ml.task import Task
 from cd4ml.utils import graph_to_dot, draw_graph
+from cd4ml.experiment import Experiment
+from cd4ml.log import logger
 
 tmpgraph = None
 
@@ -10,12 +12,13 @@ tmpgraph = None
 class Workflow(graphlib.TopologicalSorter):
     """Basic workflow class"""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, experiment: Experiment = None, *args, **kwargs):
         self.tasks = dict()
         self.valid_executors = [
             'local'
         ]
         self.running_task = None
+        self.experiment = experiment
         super().__init__(*args, **kwargs)
 
     @property
@@ -26,8 +29,8 @@ class Workflow(graphlib.TopologicalSorter):
         """
         Add a new task to the workflow.
 
-        :param str func: Function to be executed
-        :param str dependency: Task dependency name
+        :param Task func: Function to be executed
+        :param str, List[str] dependency: Task dependency names
         """
         assert isinstance(func, Task)
         self.tasks[func.name] = {
@@ -122,6 +125,10 @@ class Workflow(graphlib.TopologicalSorter):
 
             for elm in exe.done:
                 try:
+                    # Check if we have an experiment to register output
+                    if self.experiment is not None:
+                        self.experiment.save_output(name=elm, data=exe.output[elm])
+
                     self.done(elm)
                 except ValueError as e:
                     # This node was alread marked as done

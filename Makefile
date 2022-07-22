@@ -30,11 +30,11 @@ setup:
 	pip3 install -r requirements.local.txt
 
 ## Run tests in Docker
-test: setup
+test_docker: setup
 	fab test
 
 ## Run tests in venv
-test_venv: setup
+test: setup
 	fab test:env=venv
 
 ## Start a jupyter notebook instance with the project
@@ -43,11 +43,14 @@ jupyter:
 	docker build --target jupyter . -t $(IMAGE)
 	docker run -it --rm -p $(PORT):8888 -e PORT=$(PORT) -v $(PWD):/usr/src/app $(IMAGE)
 
+## Generate a new release and tag
 release:
 	fab release
 
+## Build sphinx documentation on local virtualenv
 doc:
 	fab doc:env=virtualenv
 
-docker_doc:
+## Build sphinx documentation on Docker
+doc_docker:
 	fab doc:env=docker

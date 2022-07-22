@@ -27,7 +27,7 @@ class LocalExperimentProviderTest(unittest.TestCase):
     def test_experiment_data_save(self):
         """Should save data on experiment repository."""
         teste = {'a': 'abcde'}
-        self.provider.save(path='teste.json', data=teste)
+        self.provider.save(name='teste', data=teste)
         self.assertTrue(os.path.exists(self.filepath))
 
     def test_experiment_save_pandas(self):
@@ -39,8 +39,8 @@ class LocalExperimentProviderTest(unittest.TestCase):
     def test_experiment_data_load(self):
         """Should load data from experiment repository."""
         teste = {'a': 'abcde'}
-        self.provider.save(path='teste.json', data=teste)
-        test_data = self.provider.load(self.filepath)
+        self.provider.save(name='teste', data=teste)
+        test_data = self.provider.load(name='teste')
         self.assertDictEqual(teste, test_data)
 
     def test_experiment_load_pandas(self):
@@ -53,14 +53,14 @@ class LocalExperimentProviderTest(unittest.TestCase):
     def test_experiment_save_with_pandas(self):
         """Standard save method should accept a pandas DataFrame"""
         teste = pd.DataFrame(data={'col1': [1, 2], 'col2': [3, 4]})
-        self.provider.save(path='teste.json', data=teste)
+        self.provider.save(name='teste', data=teste)
         self.assertTrue(os.path.exists(self.filepath))
 
     def test_experiment_load_with_pandas(self):
         """Should use standard load data with a flag to return data as pandas."""
         teste = pd.DataFrame(data={'col1': [1, 2], 'col2': [3, 4]})
         self.provider._save_pandas(path=self.filepath, data=teste)
-        test_data = self.provider.load('teste.json', pandas=True)
+        test_data = self.provider.load(name='teste', pandas=True)
         self.assertTrue(teste.equals(test_data))
 
 
@@ -68,6 +68,7 @@ class LocalExperimentProviderTest(unittest.TestCase):
 class ExperimentTest(unittest.TestCase):
     def setUp(self) -> None:
         self.provider = LocalExperimentProvider(repository_path=self.local_experiment_repository)
+        self.provider.add_path(path='test', name='root')
 
     def tearDown(self) -> None:
         pass

@@ -1,5 +1,4 @@
 from cd4ml.task import Task
-from cd4ml.experiment import Experiment
 
 
 class LocalExecutor:

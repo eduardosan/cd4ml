@@ -4,6 +4,8 @@ import json
 from abc import ABC, abstractmethod
 import pandas as pd
 
+from cd4ml.log import logger
+
 
 class Experiment:
     def __init__(self, provider, experiment_id='latest'):
@@ -13,16 +15,44 @@ class Experiment:
         self.provider.add_path(experiment_id, 'root')
         self.output_path = 'output'
 
+        # Load experiment metadata
+        self._init_experiment()
+
+    def _init_experiment(self):
+        # Try to load experiment metadata from provider
+        try:
+            metadata = self.provider.load(name='.metadata')
+
+            # Load output paths to provider
+            self.provider.paths = metadata['output']
+
+            # Add root path to provider object
+            self.provider.add_path('root', metadata['experiment_id'])
+        except DataNotFound:
+            logger.info(f"Creating metadata for experiment = '{self.experiment_id}'")
+            metadata = {
+                'experiment_id': self.experiment_id,
+                'output': {},
+                'params': {}
+            }
+            self.provider.save(name='.metadata', data=metadata)
+
+        self.metadata = metadata
+
     def save_output(self, name, data):
         """
         Should save experiment output to provider
 
         :param str name: Output experiment name
         :param dict, pd.DataFrame data: Data to be saved on provider
-        :return str: PAth on provider where the experiment was saved
+        :return str: Path on provider where the experiment was saved
         """
         self.provider.add_path(path=self.output_path, name=self.output_path)
-        output = self.provider.save(path=f'{self.output_path}/{name}', data=data)
+        output = self.provider.save(name=name, data=data, path=self.output_path)
+
+        # Add output data to metadata
+        self.metadata['output']['name'] = output
+        self.provider.save(name='.metadata', data=self.metadata, path='root')
         return output
 
     def load_output(self, name, pandas=False):
@@ -33,7 +63,7 @@ class Experiment:
         :param bool pandas: Should we return it as pandas DataFrame
         :return dict, pd.DataFrame: output data on desired format
         """
-        output = self.provider.load(path=f'{self.output_path}/{name}', pandas=pandas)
+        output = self.provider.load(name=name, pandas=pandas, path=self.output_path)
         return output
 
 
@@ -45,69 +75,82 @@ class ExperimentProvider(ABC):
         super().__init__()
 
     @abstractmethod
-    def save(self, path, data):
+    def save(self, name, data, datatype='json', path='root'):
         """
         Save data on repository.
 
+        :param str name: Path in the experiment repository. Defaults to root
         :param str path: Path to save data with filename, relative to experiment repository.
         :param dict, pd.DataFrame data: Data dictionary
+        :param str datatype: Data type to save on experiments repository. Can be one of the following:
+
+            * ``'json'``: standard JSON type to save dicts
+            * ``'csv'``: CSV file to serialize
         :return: Data loaded from repository
         :rtype: str
         :example:
 
         >>>  teste = {'col1': [1, 2], 'col2': [3, 4]}
         >>> p = LocalExperimentProvider(repository_path='.cd4ml')
-        >>> p.save(path='teste.json', data=teste)
+        >>> p.save(path='teste', data=teste)
         '.cd4ml/teste.json'
+        >>> p.paths
+        {
+            'teste': '.cd4ml/teste.json'
+        }
 
         >>>  teste = pd.DataFrame(data={'col1': [1, 2], 'col2': [3, 4]})
         >>> p = LocalExperimentProvider(repository_path='.cd4ml')
         >>> p.save(path='teste.json', data=teste)
         '.cd4ml/teste.json'
+        >>> p.paths
+        {
+            'teste': '.cd4ml/teste.json'
+        }
 
         """
         pass
 
     @abstractmethod
-    def load(self, path, pandas=False):
+    def load(self, name, pandas=False, path='root', datatype='json'):
         """
         Load data from repository.
 
-        :param str path: Path where data is stored with filename, relative to experiment repository.
+        :param str name: Name of the data to be recovered on experiment
+        :param str path: Path where data is stored without filename, relative to experiment repository.
         :param bool pandas: Should we return a pandas dataframe
+        :param str datatype: Data type to save on experiments repository. Can be one of the following:
+
+            * ``'json'``: standard JSON type to save dicts
+            * ``'csv'``: CSV file to serialize
         :return: The loaded data
         :rtype: dict, pd.DataFrame
         :example:
 
         >>> p = LocalExperimentProvider(repository_path='.cd4ml')
-        >>> output = p.load('teste.json', pandas=True)
+        >>> output = p.load('teste', pandas=True)
         >>> print(output)
 
         >>> p = LocalExperimentProvider(repository_path='.cd4ml')
-        >>> output = p.load('teste.json', pandas=False)
+        >>> output = p.load('teste', pandas=False)
         >>> print(output)
         {
             'col1': [1, 2],
             'col2': [3, 4]
+        }
+        >>> print(p.paths)
+        {
+            'teste': '.cd4ml/teste.json'
         }
         """
         pass
 
     @abstractmethod
     def add_path(self, path, name):
-        """Add a new path to experiments repository. It could be a new folder or anything else supported by the
-        repository. Let's suppose the repository_path is set to ``'.cd4ml'``. This method will add a new folder to path and
-        a new registered path to the list of available paths::
-
-            p = LocalExperimentProvider(repository_path='.cd4ml')
-            output = p.add_path(path='out', name=output)
-            print(output)
-            '.cd4ml/out'
-            print(p.paths)
-
-            {
-                'output': '.cd4ml/out'
-            }
+        """
+        Add a new path to experiments repository. It could be a new folder or anything else supported by the
+        repository. Let's suppose the repository_path is set to ``'.cd4ml'``. This method will add a new folder to path
+        and a new registered path to the list of available paths.
 
         :param path: Path to be added in repository
         :type path: str
@@ -115,6 +158,12 @@ class ExperimentProvider(ABC):
         :type name: str
         :return: Absolute path added to repository
         :rtype: str
+        :example:
+
+        >>> p = LocalExperimentProvider(repository_path='.cd4ml')
+        >>> output = p.add_path(path='out', name='output')
+        >>> print(output)
+        '.cd4ml/out'
         """
         pass
 
@@ -126,8 +175,11 @@ class LocalExperimentProvider(ExperimentProvider):
         # make sure local directory exists
         os.makedirs(self.repository_path, exist_ok=True)
 
-    def save(self, path, data):
-        filepath = os.path.join(self.repository_path, path)
+    def save(self, name, data, datatype='json', path='root'):
+        root_path = self.repository_path
+        if path != 'root':
+            os.path.join(self.repository_path, path)
+        filepath = os.path.join(root_path, f'{name}.{datatype}')
         with open(filepath, 'w+') as fd:
             if isinstance(data, pd.DataFrame):
                 filepath = self._save_pandas(path=filepath, data=data)
@@ -136,12 +188,18 @@ class LocalExperimentProvider(ExperimentProvider):
 
         return filepath
 
-    def load(self, path, pandas=False):
-        filepath = os.path.join(self.repository_path, path)
+    def load(self, name, pandas=False, path='root', datatype='json'):
+        root_path = self.repository_path
+        if path != 'root':
+            os.path.join(self.repository_path, path)
+        filepath = os.path.join(root_path, f'{name}.{datatype}')
         if pandas:
             return self._load_pandas(filepath)
-        with open(filepath, 'r') as fd:
-            return json.load(fd)
+        try:
+            with open(filepath, 'r') as fd:
+                return json.load(fd)
+        except FileNotFoundError as e:
+            raise DataNotFound(e)
 
     def _save_pandas(self, path, data: pd.DataFrame, orient='records', lines=True, *args, **kwargs):
         """
@@ -184,6 +242,12 @@ class LocalExperimentProvider(ExperimentProvider):
     def add_path(self, path, name):
         new_path = os.path.join(self.repository_path, path)
         os.makedirs(new_path, exist_ok=True)
-        self.paths = {name: new_path}
+        # If adding root path, add it to project repository path
+        if name == 'root':
+            self.repository_path = os.path.join(self.repository_path, path)
         return new_path
 
+
+class DataNotFound(Exception):
+    """Should be raised when data is not found on provider"""
+    pass

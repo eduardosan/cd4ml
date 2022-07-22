@@ -5,15 +5,18 @@ from unittest import TestCase
 
 from cd4ml.workflow import Workflow
 from cd4ml.task import Task
+from cd4ml.experiment import LocalExperimentProvider, Experiment
 
 
 def add(a, b):
     return a + b
 
 
+@pytest.mark.usefixtures('get_local_experiment_repository')
 class TestWorkflow(TestCase):
     def setUp(self) -> None:
-        pass
+        provider = LocalExperimentProvider(repository_path=self.local_experiment_repository)
+        self.experiment = Experiment(provider=provider)
 
     def tearDown(self) -> None:
         pass
@@ -241,42 +244,6 @@ class TestWorkflow(TestCase):
         dotfile = io.open(self.dotfile).read()
         self.assertListEqual(dot.split(), dotfile.split())
 
-
-    """def test_as_dict(self):
-        Should return workflow dependencies as dict.
-        w = Workflow()
-        t = Task(name='add', task=add)
-        t2 = Task(name='add2', task=add)
-        t3 = Task(name='add3', task=add)
-        t4 = Task(name='add4', task=add)
-        t5 = Task(name='add5', task=add)
-        t6 = Task(name='add6', task=add)
-        t7 = Task(name='add7', task=add)
-        t8 = Task(name='add8', task=add)
-        t9 = Task(name='add9', task=add)
-        w.add_task(t)
-        w.add_task(t2, dependency='add')
-        w.add_task(t3, dependency='add')
-        w.add_task(t4, dependency='add2')
-        w.add_task(t5, dependency='add2')
-        w.add_task(t6, dependency='add')
-        w.add_task(t7, dependency='add5')
-        w.add_task(t8, dependency='add6')
-        w.add_task(t9)
-
-        output = w.as_dict()
-        self.assertDictEqual(output, {
-            'add': {},
-            'add2': {'add'},
-            'add4': {'add2'},
-            'add3': {'add'},
-            'add5': {'add2'},
-            'add6': {'add'},
-            'add7': {'add5'},
-            'add8': {'add6'},
-            'add9': {}
-        })"""
-
     def test_workflow_reset(self):
         """Should be able to reset the workflow to execute multiple times."""
         w = Workflow()
@@ -292,3 +259,26 @@ class TestWorkflow(TestCase):
         w.reset()
         order2 = w.tasks_order
         self.assertListEqual(order1, order2)
+
+    def test_workflow_save_output(self):
+        """Should save workflow dependencies output to experiment"""
+        w = Workflow(experiment=self.experiment)
+        t = Task(name='add', task=add)
+        t2 = Task(name='add2', task=add)
+        w.add_task(t)
+        w.add_task(t2)
+        output = w.run(run_config={
+            'add': {
+                'params': {'a': 1, 'b': 2},
+                'output': 'add'
+            },
+            'add2': {
+                'params': {'a': 2, 'b': 3},
+                'output': 'add2'
+            }
+        }, executor='local')
+        add_var = self.experiment.load_output(name='add')
+        add_var2 = self.experiment.load_output(name='add2')
+        self.assertEqual(output['add'], add_var)
+        self.assertEqual(output['add2'], add_var2)
+
