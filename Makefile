@@ -45,3 +45,9 @@ jupyter:
 
 release:
 	fab release
+
+doc:
+	fab doc:env=virtualenv
+
+docker_doc:
+	fab doc:env=docker

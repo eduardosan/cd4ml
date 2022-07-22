@@ -408,3 +408,30 @@ def changelog():
     with settings(warn_only=True):
         local("gitchangelog > CHANGES.txt")
     puts(c.blue("Changelog written"))
+
+
+def doc(env='docker'):
+    """
+    Generate sphinx documentation
+
+    Run env=virtualenv to execute on virtualenv
+    """
+    clean()
+    if env == 'docker':
+        puts(c.blue("Generating documentation on docker..."))
+        version = compute_version(increase=False)
+        image_name = _image_name(version)
+        puts(c.blue("Creating and building docker instance for testing"))
+        local("docker build --target docs . -t %s" % image_name)
+        result = local("docker run --rm -it -t %s /bin/bash -c  'cd docs && make html'" % image_name)
+        if result.return_code > 0:
+            abort(c.red("Error generating documentation"))
+
+        puts(c.magenta("Documentation generated successfully"))
+    else:
+        _invirt()
+        local("pip install -e '.[docs]'")
+        puts(c.blue("Generating docs..."))
+        with lcd('docs'):
+            local("make html")
+        puts(c.magenta("Documentation generated successfully"))

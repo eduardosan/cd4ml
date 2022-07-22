@@ -1,4 +1,5 @@
 from cd4ml.task import Task
+from cd4ml.experiment import Experiment
 
 
 class LocalExecutor:
@@ -12,10 +13,11 @@ class LocalExecutor:
 
     def submit(self, task: Task, params: dict = None, output=None):
         """
-        Submit a job to process pool executor
-        :param task: object Task instance to be executed
-        :param params: parameters dict for the task
-        :param output: str  Name of output var
+        Submit a job to process pool executor.
+
+        :param Task task: Task instance to be executed
+        :param dict params: parameters dict for the task
+        :param str output: Name of output var
         """
         if not isinstance(params, dict) and params is not None:
             raise TypeError(f"We only accept dict as params you supplied '{type(params)}' for {params}")

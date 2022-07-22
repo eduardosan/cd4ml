@@ -86,9 +86,27 @@ class ExperimentTest(unittest.TestCase):
     def test_executor_experiments_output(self):
         """Should create experiments output data repository"""
         e = Experiment(provider=self.provider)
-        new_path = e.provider.add_path(path='out', name='output')
+        new_path = e.provider.add_path(path='out', name='out')
         self.assertTrue(os.path.exists(new_path))
 
     def test_executor_experiments_output_data(self):
         """Should store experiments output data in repository"""
-        pass
+        e = Experiment(provider=self.provider)
+        output = e.save_output(name='teste.json', data={'col1': [1, 2], 'col2': [3, 4]})
+        self.assertTrue(os.path.exists(output))
+
+    def test_executor_experiments_load_output(self):
+        """Should load experiments output stored on provider"""
+        e = Experiment(provider=self.provider)
+        data = {'col1': [1, 2], 'col2': [3, 4]}
+        e.save_output(name='test.json', data=data)
+        output = e.load_output(name='test.json')
+        self.assertDictEqual(output, data)
+
+    def test_executor_experiments_load_output_pandas(self):
+        """Should load experiments output stored on provider as pandas dataframe"""
+        e = Experiment(provider=self.provider)
+        data = pd.DataFrame(data={'col1': [1, 2], 'col2': [3, 4]})
+        e.save_output(name='test.json', data=data)
+        output = e.load_output(name='test.json', pandas=True)
+        self.assertTrue(data.equals(output))

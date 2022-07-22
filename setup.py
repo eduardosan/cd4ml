@@ -26,6 +26,10 @@ graphs_require = [
     'pygraphviz'
 ]
 
+docs_require = [
+    'sphinx'
+]
+
 setup(
     name='cd4ml',
     version=VERSION,
@@ -47,7 +51,8 @@ setup(
     author_email='eduardo@eduardosan.com',
     extras_require={
         'testing': tests_require,
-        'graphs': graphs_require
+        'graphs': graphs_require,
+        'docs': docs_require
     },
     install_requires=requires,
 )

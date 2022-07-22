@@ -24,10 +24,10 @@ class Workflow(graphlib.TopologicalSorter):
 
     def add_task(self, func, dependency=None):
         """
-        Add a new task to the workflow
-        :param func: Function to be executed
-        :param dependency: Task dependency name
-        :return:
+        Add a new task to the workflow.
+
+        :param str func: Function to be executed
+        :param str dependency: Task dependency name
         """
         assert isinstance(func, Task)
         self.tasks[func.name] = {
@@ -67,19 +67,30 @@ class Workflow(graphlib.TopologicalSorter):
     def run(self, run_config: dict, executor='local'):
         """
         Run workflow tasks.
-        :param run_config: dict Tasks input and output format. Ex.:
-        {
-            'add': {
-                'params': {'a': 1, 'b': 2},
-                'output': 'add'
-            },
-            'add2': {
-                'params': {'a': 2, 'b': 3},
-                'output': 'add2'
-            }
-        }
-        :param executor:    Type of job executor. Defaults to local asyncio
-        :return: dict Output JSON with run results
+
+        :param dict run_config: Tasks input and output format.
+        :param str executor: Type of job executor. Can be one of the following:
+
+            * ``'local'``: runs in local executor
+        :return: Output JSON with run results
+        :rtype: dict
+        :example:
+
+        >>> def add(a, b):
+        >>>    return a + b
+        >>> w = Workflow()
+        >>> t = Task(name='add', task=add)
+        >>> t2 = Task(name='add2', task=add)
+        >>> w.run(run_config={
+        >>>    'add': {
+        >>>        'params': {'a': 1, 'b': 2},
+        >>>        'output': 'add'
+        >>>    },
+        >>>    'add2': {
+        >>>        'params': {'a': 2, 'b': 3},
+        >>>        'output': 'add2'
+        >>>    }
+        >>> }, executor='local')
         {
             'add': 3,
             'add2': 3

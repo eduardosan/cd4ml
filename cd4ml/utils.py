@@ -23,8 +23,9 @@ def get_graph(graph: TopologicalSorter):
 
 def graph_to_dot(graph: TopologicalSorter):
     """
-    Parse a graph in Topological sorter
-    :param graph:
+    Parse a graph in Topological sorter.
+
+    :param TopologicalSorter graph:
     :return:
     """
     g = get_graph(graph)
@@ -35,9 +36,12 @@ def graph_to_dot(graph: TopologicalSorter):
 
 def parse_node(ts: TopologicalSorter, parent, node, agraph):
     """
-    Generate a graph from the node
+    Generate a graph from the node.
 
-    :param node:
+    :param TopologicalSorter ts:
+    :param str parent:
+    :param str node:
+    :param AGraph agraph:
     :return:
     """
     import pygraphviz as pgv
@@ -55,9 +59,10 @@ def parse_node(ts: TopologicalSorter, parent, node, agraph):
 
 def draw_graph(graph: TopologicalSorter, filepath=None):
     """
-    Draw SVG representation for the graph
-    :param graph: pgv.Agraph   A graph object
-    :param filepath: str    filepath to image file output
+    Draw SVG representation for the graph.
+
+    :param pgv.Agraph graph: A graph object
+    :param str filepath:  filepath to image file output
     :return: object with draw
     """
     g = get_graph(graph)

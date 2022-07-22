@@ -9,6 +9,32 @@ class Experiment:
     def __init__(self, provider, experiment_id='latest'):
         assert isinstance(provider, ExperimentProvider)
         self.provider = provider
+        self.experiment_id = experiment_id
+        self.provider.add_path(experiment_id, 'root')
+        self.output_path = 'output'
+
+    def save_output(self, name, data):
+        """
+        Should save experiment output to provider
+
+        :param str name: Output experiment name
+        :param dict, pd.DataFrame data: Data to be saved on provider
+        :return str: PAth on provider where the experiment was saved
+        """
+        self.provider.add_path(path=self.output_path, name=self.output_path)
+        output = self.provider.save(path=f'{self.output_path}/{name}', data=data)
+        return output
+
+    def load_output(self, name, pandas=False):
+        """
+        Load previously stored output on provider
+
+        :param str name: Name of data file to be loaded from output
+        :param bool pandas: Should we return it as pandas DataFrame
+        :return dict, pd.DataFrame: output data on desired format
+        """
+        output = self.provider.load(path=f'{self.output_path}/{name}', pandas=pandas)
+        return output
 
 
 class ExperimentProvider(ABC):
@@ -21,51 +47,67 @@ class ExperimentProvider(ABC):
     @abstractmethod
     def save(self, path, data):
         """
-        Save data on repository
-        :param path: Path to save data with filename, relative to experiment repository
-            Ex.: repository = '.cd4ml'
-                data = 'output/teste.json
-                filepath = '.cd4ml/output/teste.json
-        :type path: str
-        :param data: Data dictionary
-        :type data: dict or pd.DataFrame
+        Save data on repository.
+
+        :param str path: Path to save data with filename, relative to experiment repository.
+        :param dict, pd.DataFrame data: Data dictionary
         :return: Data loaded from repository
-        :rtype: dict
+        :rtype: str
+        :example:
+
+        >>>  teste = {'col1': [1, 2], 'col2': [3, 4]}
+        >>> p = LocalExperimentProvider(repository_path='.cd4ml')
+        >>> p.save(path='teste.json', data=teste)
+        '.cd4ml/teste.json'
+
+        >>>  teste = pd.DataFrame(data={'col1': [1, 2], 'col2': [3, 4]})
+        >>> p = LocalExperimentProvider(repository_path='.cd4ml')
+        >>> p.save(path='teste.json', data=teste)
+        '.cd4ml/teste.json'
+
         """
         pass
 
     @abstractmethod
     def load(self, path, pandas=False):
         """
-        Load data from repository
-        :param path: Path where data is stored with filename, relative to experiment repository
-            Ex.: repository = '.cd4ml'
-                data = 'output/teste.json
-                filepath = '.cd4ml/output/teste.json
-        :type path: str
-        :param pandas: Should we return a pandas dataframe
-        :type pandas: bool
+        Load data from repository.
+
+        :param str path: Path where data is stored with filename, relative to experiment repository.
+        :param bool pandas: Should we return a pandas dataframe
         :return: The loaded data
-        :rtype: dict or pd.DataFrame
+        :rtype: dict, pd.DataFrame
+        :example:
+
+        >>> p = LocalExperimentProvider(repository_path='.cd4ml')
+        >>> output = p.load('teste.json', pandas=True)
+        >>> print(output)
+
+        >>> p = LocalExperimentProvider(repository_path='.cd4ml')
+        >>> output = p.load('teste.json', pandas=False)
+        >>> print(output)
+        {
+            'col1': [1, 2],
+            'col2': [3, 4]
+        }
         """
         pass
 
     @abstractmethod
     def add_path(self, path, name):
-        """
-        Add a new path to experiments repository. It could be a new folder or anything else supported by the repository.
-        Let's the repository_path is set to '.cd4ml'. This method will add a new folder to path and a new registered
-        path to the list of available paths
+        """Add a new path to experiments repository. It could be a new folder or anything else supported by the
+        repository. Let's suppose the repository_path is set to ``'.cd4ml'``. This method will add a new folder to path and
+        a new registered path to the list of available paths::
 
-        p = LocalExperimentProvider(repository_path='.cd4ml')
-        output = p.add_path(path='out', name=output)
-        print(output)
-        '.cd4ml/out'
-        print(p.paths)
+            p = LocalExperimentProvider(repository_path='.cd4ml')
+            output = p.add_path(path='out', name=output)
+            print(output)
+            '.cd4ml/out'
+            print(p.paths)
 
-        {
-            'output': '.cd4ml/out'
-        }
+            {
+                'output': '.cd4ml/out'
+            }
 
         :param path: Path to be added in repository
         :type path: str

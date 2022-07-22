@@ -44,3 +44,7 @@ ENV PORT=8888
 RUN pip install jupyterlab
 ENTRYPOINT jupyter lab --app_dir=/usr/src/app --no-browser --port=${PORT} --allow-root --ip=0.0.0.0
 
+FROM base as docs
+
+RUN pip install --no-cache-dir -e ".[docs]"
+
