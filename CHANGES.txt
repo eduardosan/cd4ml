@@ -4,6 +4,13 @@ Changelog
 
 (unreleased)
 ------------
+- Support saving and loading output to files. [Eduardo Santos]
+- Refactor to add path data. [Eduardo Santos]
+
+
+v0.0.4 (2022-07-22)
+-------------------
+- Bumped version to v0.0.4. [Eduardo Santos]
 - Adding documentation features and sphinx. [Eduardo Santos]
 - Small fix on tests. [Eduardo Santos]
 - Experiments structure. [Eduardo Santos]
