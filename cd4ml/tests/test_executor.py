@@ -1,21 +1,28 @@
+import os.path
+
 import unittest
+import pytest
 
 from cd4ml.executor import LocalExecutor
 from cd4ml.task import Task
+from cd4ml.experiment import LocalExperimentProvider, Experiment
 
 
 def add(a, b):
     return a + b
 
 
-class TestExecutor(unittest.TestCase):
+@pytest.mark.usefixtures('get_local_experiment_repository')
+class TestLocalExecutor(unittest.TestCase):
     """Test local executor."""
     def setUp(self) -> None:
         def add(a, b):
             return a + b
 
         self.task = Task(name='add', task=add)
-        self.e = LocalExecutor()
+        provider = LocalExperimentProvider(repository_path=self.local_experiment_repository)
+        exp = Experiment(provider=provider)
+        self.e = LocalExecutor(experiment=exp)
 
     def tearDown(self) -> None:
         pass
@@ -70,12 +77,11 @@ class TestExecutor(unittest.TestCase):
 
     def test_executor_experiments_repository(self):
         """Should create a repository for experiments data."""
-        pass
+        self.assertTrue(os.path.exists(self.e.experiment.provider.repository_path))
 
     def test_executor_experiments_output(self):
         """Should store experiments output on data repository"""
-        pass
-
-    def test_executor_experiments_params(self):
-        """Should read experiments params from data repository"""
-        pass
+        self.e.submit(self.task, params={'a': 1, 'b': 2}, output='add')
+        self.e.run()
+        output = self.e.experiment.load_output(name='add')
+        self.assertEqual(output, 3)

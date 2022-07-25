@@ -12,8 +12,9 @@ class Experiment:
         assert isinstance(provider, ExperimentProvider)
         self.provider = provider
         self.experiment_id = experiment_id
-        self.provider.add_path(experiment_id, 'root')
+        self.provider.add_path(path=experiment_id, name='root')
         self.output_path = 'output'
+        self.params_path = 'params'
 
         # Load experiment metadata
         self._init_experiment()
@@ -25,11 +26,8 @@ class Experiment:
 
             # Load output paths to provider
             self.provider.paths = metadata['output']
-
-            # Add root path to provider object
-            self.provider.add_path('root', metadata['experiment_id'])
         except DataNotFound:
-            logger.info(f"Creating metadata for experiment = '{self.experiment_id}'")
+            logger.info(f"Creating metadata for experiment = '{self.experiment_id}' at {self.provider.repository_path}")
             metadata = {
                 'experiment_id': self.experiment_id,
                 'output': {},
@@ -47,11 +45,11 @@ class Experiment:
         :param dict, pd.DataFrame data: Data to be saved on provider
         :return str: Path on provider where the experiment was saved
         """
-        self.provider.add_path(path=self.output_path, name=self.output_path)
+        self.provider.add_path(path=self.output_path, name='output')
         output = self.provider.save(name=name, data=data, path=self.output_path)
 
         # Add output data to metadata
-        self.metadata['output']['name'] = output
+        self.metadata['output'][name] = output
         self.provider.save(name='.metadata', data=self.metadata, path='root')
         return output
 
@@ -64,6 +62,32 @@ class Experiment:
         :return dict, pd.DataFrame: output data on desired format
         """
         output = self.provider.load(name=name, pandas=pandas, path=self.output_path)
+        return output
+
+    def save_params(self, name, data: dict):
+        """
+        Save params on experiment provider
+
+        :param str name: A name to be added to params. Should be the same task name
+        :param dict data: params in kwargs format
+        :return str: Path on provider where the params were saved
+        """
+        self.provider.add_path(path=self.params_path, name='params')
+        output = self.provider.save(name=name, data=data, path=self.params_path)
+
+        # Add params to metadata
+        self.metadata['params'][name] = output
+        self.provider.save(name='.metadata', data=self.metadata, path='root')
+        return output
+
+    def load_params(self, name):
+        """
+        Load previously stored output on provider
+
+        :param str name: Name of task to retrieve params from output
+        :return dict: params in kwargs format
+        """
+        output = self.provider.load(name=name, pandas=False, path=self.params_path)
         return output
 
 
@@ -178,7 +202,7 @@ class LocalExperimentProvider(ExperimentProvider):
     def save(self, name, data, datatype='json', path='root'):
         root_path = self.repository_path
         if path != 'root':
-            os.path.join(self.repository_path, path)
+            root_path = os.path.join(self.repository_path, path)
         filepath = os.path.join(root_path, f'{name}.{datatype}')
         with open(filepath, 'w+') as fd:
             if isinstance(data, pd.DataFrame):
@@ -191,7 +215,7 @@ class LocalExperimentProvider(ExperimentProvider):
     def load(self, name, pandas=False, path='root', datatype='json'):
         root_path = self.repository_path
         if path != 'root':
-            os.path.join(self.repository_path, path)
+            root_path = os.path.join(self.repository_path, path)
         filepath = os.path.join(root_path, f'{name}.{datatype}')
         if pandas:
             return self._load_pandas(filepath)
@@ -242,9 +266,6 @@ class LocalExperimentProvider(ExperimentProvider):
     def add_path(self, path, name):
         new_path = os.path.join(self.repository_path, path)
         os.makedirs(new_path, exist_ok=True)
-        # If adding root path, add it to project repository path
-        if name == 'root':
-            self.repository_path = os.path.join(self.repository_path, path)
         return new_path
 
 

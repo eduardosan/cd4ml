@@ -57,7 +57,7 @@ def parse_node(ts: TopologicalSorter, parent, node, agraph):
     return agraph
 
 
-def draw_graph(graph: TopologicalSorter, filepath=None):
+def draw_graph(graph: TopologicalSorter, filepath: str = None):
     """
     Draw SVG representation for the graph.
 

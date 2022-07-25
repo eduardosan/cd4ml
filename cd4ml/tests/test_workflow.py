@@ -282,3 +282,25 @@ class TestWorkflow(TestCase):
         self.assertEqual(output['add'], add_var)
         self.assertEqual(output['add2'], add_var2)
 
+    def test_workflow_dependency_load_saved_output(self):
+        """Should use a previously saved output on next step of workflow."""
+        def increment(c):
+            return c + 1
+
+        t = Task(name='add', task=add)
+        t2 = Task(name='increment', task=increment)
+        w = Workflow(experiment=self.experiment)
+        w.add_task(t)
+        w.add_task(t2, dependency='add')
+        w.run(run_config={
+            'add': {
+                'params': {'a': 1, 'b': 2},
+                'output': 'c'
+            },
+            'increment': {
+                'params': None,
+                'output': 'increment'
+            }
+        }, executor='local')
+        increment_var = self.experiment.load_output(name='increment')
+        self.assertEqual(increment_var, 4)

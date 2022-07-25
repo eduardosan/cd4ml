@@ -1,14 +1,16 @@
 from cd4ml.task import Task
+from cd4ml.experiment import Experiment as Exp
+from cd4ml.log import logger
 
 
 class LocalExecutor:
     """Local executor class."""
 
-    def __init__(self, experiment_id='latest'):
+    def __init__(self, experiment: Exp = None):
         self.tasks = dict()
         self.output = dict()
         self.done = list()
-        self.experiment_id = experiment_id
+        self.experiment = experiment
 
     def submit(self, task: Task, params: dict = None, output=None):
         """
@@ -38,6 +40,11 @@ class LocalExecutor:
 
             if self.tasks[elm]['output'] is not None:
                 self.output[self.tasks[elm]['output']] = result
+
+                # Save output on experiments repository
+                if self.experiment is not None:
+                    logger.info(f"Saving task {elm} output on path {self.experiment.provider.repository_path}")
+                    self.experiment.save_output(name=self.tasks[elm]['output'], data=result)
 
             # Add task to done list
             self.done.append(elm)

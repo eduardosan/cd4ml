@@ -52,10 +52,10 @@ class Workflow(graphlib.TopologicalSorter):
         """
         Run task in Workflow
 
-        :param name: str    Task name
+        :param str name: Task name
         :param args:
         :param kwargs:
-        :return: object Task output
+        :return dict: Task output
         """
         return self.tasks[name]['task'].run(*args, **kwargs)
 
@@ -65,7 +65,7 @@ class Workflow(graphlib.TopologicalSorter):
 
         if executor == 'local':
             from cd4ml.executor import LocalExecutor
-            return LocalExecutor()
+            return LocalExecutor(experiment=self.experiment)
 
     def run(self, run_config: dict, executor='local'):
         """
@@ -112,33 +112,47 @@ class Workflow(graphlib.TopologicalSorter):
                         for elm in self.tasks[task]['dependency']:
                             # Get output name from task workflow configuration
                             output_var = run_config[elm]['output']
-                            run_config[task]['params'][output_var] = exe.output[output_var]
+
+                            # Get parameters from experiment provider, if it exists
+                            if self.experiment is not None:
+                                # TODO: support pandas as input
+                                run_config[task]['params'][output_var] = self.experiment.load_output(
+                                    name=output_var)
+                            else:
+                                run_config[task]['params'][output_var] = exe.output[output_var]
                     else:
                         output_var = run_config[self.tasks[task]['dependency']]['output']
-                        run_config[task]['params'][output_var] = exe.output[output_var]
+                        if self.experiment is not None:
+                            run_config[task]['params'][output_var] = self.experiment.load_output(name=output_var)
+                        else:
+                            run_config[task]['params'][output_var] = exe.output[output_var]
 
+                logger.info(f"Submitting task {task} to executor {executor}")
                 exe.submit(self.tasks[task]['task'], params=run_config[task]['params'],
                            output=run_config[task].get('output'))
 
             # Run tasks
+            logger.info("Running workflow...")
             exe.run()
 
             for elm in exe.done:
+                logger.info(f"Marking task {elm} as done...")
                 try:
-                    # Check if we have an experiment to register output
-                    if self.experiment is not None:
-                        self.experiment.save_output(name=elm, data=exe.output[elm])
-
                     self.done(elm)
                 except ValueError as e:
-                    # This node was alread marked as done
+                    # This node was already marked as done
                     print(e)
                     pass
 
         return exe.output
 
-    def dotfile(self, filepath):
-        """Generate a dotfile from graph."""
+    def dotfile(self, filepath: str):
+        """
+        Generate a dotfile from graph.
+
+        :param str filepath: Filepath to save the dotfile
+        :return str: Filepath with the file saved
+        """
         dotstring = graph_to_dot(self)
 
         # Generate dotfile in tmp dir
@@ -147,9 +161,15 @@ class Workflow(graphlib.TopologicalSorter):
 
         return filepath
 
-    def draw(self, filepath=None):
-        """Draw graph to the output."""
-        return draw_graph(self, filepath=None)
+    def draw(self, filepath: str = None):
+        """
+        Draw graph to the output.
+
+        :param str filepath: Filepath to save the drawing output
+        :return: Graph instance to print on output
+        :rtype: `pygraphviz.Agraph <https://pygraphviz.github.io/documentation/stable/reference/agraph.html>`_
+        """
+        return draw_graph(self, filepath=filepath)
 
     def prepare(self) -> None:
         """Just copy object before it starts processing the graph, so we can run it multiple times"""
