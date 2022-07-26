@@ -2,16 +2,18 @@ from cd4ml.task import Task
 from cd4ml.experiment import Experiment as Exp
 from cd4ml.log import logger
 
+from abc import ABC, abstractmethod
 
-class LocalExecutor:
-    """Local executor class."""
 
+class Executor(ABC):
     def __init__(self, experiment: Exp = None):
         self.tasks = dict()
         self.output = dict()
         self.done = list()
         self.experiment = experiment
+        super().__init__()
 
+    @abstractmethod
     def submit(self, task: Task, params: dict = None, output=None):
         """
         Submit a job to process pool executor.
@@ -20,6 +22,21 @@ class LocalExecutor:
         :param dict params: parameters dict for the task
         :param str output: Name of output var
         """
+        pass
+
+    @abstractmethod
+    def run(self):
+        """"Run pending tasks."""
+        pass
+
+
+class LocalExecutor(Executor):
+    """Local executor class."""
+
+    def __init__(self, experiment: Exp = None):
+        super(LocalExecutor, self).__init__(experiment)
+
+    def submit(self, task: Task, params: dict = None, output=None):
         if not isinstance(params, dict) and params is not None:
             raise TypeError(f"We only accept dict as params you supplied '{type(params)}' for {params}")
 
@@ -30,7 +47,6 @@ class LocalExecutor:
         }
 
     def run(self):
-        """"Run pending tasks."""
         for elm in self.tasks:
             try:
                 result = self.tasks[elm]['task'].run(**self.tasks[elm]['params'])
