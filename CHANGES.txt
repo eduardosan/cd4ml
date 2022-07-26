@@ -4,6 +4,13 @@ Changelog
 
 (unreleased)
 ------------
+- Abstract class to executor. [Eduardo Santos]
+- Add Read the docs configuration. [Eduardo Santos]
+
+
+v0.0.5 (2022-07-25)
+-------------------
+- Bumped version to v0.0.5. [Eduardo Santos]
 - Support saving and loading output to files. [Eduardo Santos]
 - Refactor to add path data. [Eduardo Santos]
 
